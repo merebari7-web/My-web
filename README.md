@@ -1,36 +1,132 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NaijaLearn 🇳🇬
 
-## Getting Started
+A modern, mobile-first e-learning platform for Nigerian students, covering **Primary 1 → SS3** (9-3-4 system), aligned to the **NERDC curriculum** with **WAEC / NECO / JAMB** exam readiness.
 
-First, run the development server:
+**🔴 Live demo:** https://naijalearn-plum.vercel.app
+
+## Demo accounts
+
+All demo accounts use the password `Password123`.
+
+| Role    | Email                     | Notes                          |
+|---------|---------------------------|---------------------------------|
+| Student | `student@naijalearn.ng`   | SS2 Science, XP 1250, 14-day streak |
+| Student | `tobi.p5@naijalearn.ng`   | Primary 5                       |
+| Teacher | `teacher@naijalearn.ng`   | Has authored lessons/exams      |
+| Parent  | `parent@naijalearn.ng`    | Linked to `student@naijalearn.ng` |
+| Admin   | `admin@naijalearn.ng`     | Full platform overview          |
+
+## Tech stack
+
+- **Framework:** Next.js 14 (App Router) + TypeScript
+- **Styling:** Tailwind CSS + shadcn/ui-style components + Framer Motion
+- **Database:** PostgreSQL via Prisma ORM
+- **Auth:** NextAuth.js (email/password credentials + Google OAuth), JWT sessions, role-based access (Student / Teacher / Parent / Admin)
+- **Forms/validation:** React Hook Form + Zod
+- **PWA:** next-pwa (offline-friendly, installable)
+
+## Getting started locally
+
+### 1. Prerequisites
+- Node.js 20+
+- A PostgreSQL database (local or hosted, e.g. [Neon](https://neon.tech))
+
+### 2. Install dependencies
+
+```bash
+npm install --legacy-peer-deps
+```
+
+### 3. Configure environment variables
+
+Copy `.env.example` to `.env` and fill in the values:
+
+```bash
+cp .env.example .env
+```
+
+At minimum you need:
+- `DATABASE_URL` — your PostgreSQL connection string
+- `NEXTAUTH_SECRET` — a random secret (`openssl rand -base64 32`)
+- `NEXTAUTH_URL` — `http://localhost:3000` for local dev
+
+Google OAuth and payment provider keys (Paystack/Flutterwave) are optional.
+
+### 4. Set up the database
+
+```bash
+npx prisma migrate deploy   # apply the schema
+npm run db:seed             # load real Nigerian curriculum content + demo accounts
+```
+
+The seed script creates:
+- 12 class levels (Primary 1 → SS3), 42 subjects, 237 class-subject mappings
+- Full lesson content (3 lessons + quiz + term exam) for **all 15 Primary 5 subjects** and **9 SS2 subjects** (Physics, Chemistry, Biology, English Language, Mathematics, Civic Education, Financial Accounting, Government, Further Mathematics)
+- A full 30-question **JAMB UTME mock exam** (Use of English)
+- 5 demo accounts (see table above), 8 gamification badges, 10 Nigerian public holidays, announcements, and sample forum activity
+
+### 5. Run the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Available scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command             | Description                                  |
+|----------------------|-----------------------------------------------|
+| `npm run dev`        | Start the development server                  |
+| `npm run build`      | Generate Prisma client + build for production |
+| `npm run start`      | Start the production server                   |
+| `npm run db:seed`    | Seed the database with curriculum + demo data |
+| `npm run db:migrate` | Run Prisma migrations (dev)                   |
+| `npm run db:studio`  | Open Prisma Studio (visual DB browser)        |
+| `npm run test`       | Run tests (Vitest)                            |
+| `npm run lint`       | Lint the codebase                             |
 
-## Learn More
+## Key routes
 
-To learn more about Next.js, take a look at the following resources:
+| Route                                   | Description                                    |
+|-------------------------------------------|-------------------------------------------------|
+| `/`                                      | Marketing homepage                             |
+| `/login`, `/register`                    | Auth pages                                     |
+| `/dashboard`                             | Role-aware dashboard (Student/Teacher/Parent/Admin) |
+| `/learn`                                 | Subject browser for the logged-in student's class |
+| `/learn/[classLevelId]/[subjectSlug]`    | Lesson list + exams for a subject              |
+| `/lesson/[lessonId]`                     | Lesson viewer — markdown content, TTS, inline quiz |
+| `/cbt`                                   | CBT mock exam list (WAEC/NECO/JAMB-styled)     |
+| `/cbt/[examId]`                          | Timed exam runner with negative marking toggle |
+| `/cbt/[examId]/result/[attemptId]`       | Score report with per-question explanations    |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deployment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This project is deployed on **Vercel** with a **Neon** (serverless Postgres) database.
 
-## Deploy on Vercel
+To deploy your own instance:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Push this repo to GitHub.
+2. Import it into [Vercel](https://vercel.com/new).
+3. Add a Postgres database (Vercel's Neon integration works out of the box) and set `DATABASE_URL` in the project's environment variables.
+4. Set `NEXTAUTH_SECRET` and `NEXTAUTH_URL` (your production domain) as environment variables.
+5. Vercel runs `npm run build`, which executes `prisma generate` automatically before `next build`.
+6. After the first deploy, run migrations and seed the production database:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   ```bash
+   DATABASE_URL="<your-production-db-url>" npx prisma migrate deploy
+   DATABASE_URL="<your-production-db-url>" npm run db:seed
+   ```
+
+## Project structure
+
+```
+prisma/
+  schema.prisma        # Full data model (users, curriculum, lessons, exams, gamification...)
+  seed.ts               # Main seed script
+  seed/data/            # Real Nigerian curriculum content (P5 + SS2 + JAMB mock)
+src/
+  app/                  # Next.js App Router pages & API routes
+  components/           # UI components (dashboard, CBT engine, lesson viewer, layout)
+  lib/                  # Auth, Prisma client, session helpers, validation, utils
+```
