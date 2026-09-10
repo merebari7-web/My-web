@@ -43,6 +43,10 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonI
         durationMins: lesson.durationMins,
         subjectName: lesson.subject.name,
         topicName: lesson.topic?.title ?? null,
+        term: lesson.term,
+        week: lesson.week,
+        evaluationQuestions: lesson.evaluationQuestions,
+        assignment: lesson.assignment,
       }}
       quizQuestions={lesson.quizQuestions.map((q) => ({
         id: q.id,

@@ -306,6 +306,7 @@ async function main() {
           necoTopic: lessonSeed.topic.necoTopic,
           jambRelevance: lessonSeed.topic.jambRelevance,
           term: lessonSeed.term ?? 1,
+          week: lessonSeed.topic.week ?? lessonSeed.week ?? i + 1,
         },
       });
 
@@ -325,6 +326,13 @@ async function main() {
           durationMins: lessonSeed.durationMins ?? 20,
           order: i,
           term: lessonSeed.term ?? 1,
+          week: lessonSeed.week ?? i + 1,
+          learningObjectives: lessonSeed.learningObjectives,
+          entryBehaviour: lessonSeed.entryBehaviour,
+          instructionalMaterials: lessonSeed.instructionalMaterials,
+          classActivities: lessonSeed.classActivities,
+          evaluationQuestions: lessonSeed.evaluationQuestions,
+          assignment: lessonSeed.assignment,
           subjectId,
           classSubjectId,
           topicId: topic.id,
@@ -420,6 +428,59 @@ async function main() {
   console.log(
     `   ✓ ${lessonCount} lessons, ${questionCount} questions, ${examCount} term exams seeded\n`
   );
+
+  // ---------------------------------------------------------------------
+  // SCHEME OF WORK (worked example: P5 Mathematics, First Term)
+  // ---------------------------------------------------------------------
+  console.log("🗓️  Seeding sample scheme of work (P5 Mathematics, Term 1)...");
+  const p5MathsClassSubjectId = classSubjectMap.get("P5|mathematics|NONE");
+  if (p5MathsClassSubjectId) {
+    const scheme = await prisma.schemeOfWork.upsert({
+      where: {
+        classSubjectId_term_session: {
+          classSubjectId: p5MathsClassSubjectId,
+          term: 1,
+          session: "2025/2026",
+        },
+      },
+      update: {},
+      create: {
+        classSubjectId: p5MathsClassSubjectId,
+        term: 1,
+        session: "2025/2026",
+        title: "Primary 5 Mathematics — First Term Scheme of Work",
+        createdById: teacherUser.id,
+      },
+    });
+
+    const schemeEntries: { week: number; topicTitle: string; contentSummary: string; referenceMaterials: string }[] = [
+      { week: 1, topicTitle: "Whole Numbers and Place Value", contentSummary: "Place value up to 1,000,000; expanded form; reading and writing large numbers.", referenceMaterials: "NERDC-approved Primary Mathematics textbook; place value chart; Naira notes." },
+      { week: 2, topicTitle: "Rounding Off Numbers", contentSummary: "Rounding whole numbers to the nearest 10, 100, and 1,000.", referenceMaterials: "Number line chart; textbook." },
+      { week: 3, topicTitle: "Basic Operations: Addition and Subtraction of Large Numbers", contentSummary: "Addition and subtraction of numbers up to 6 digits with carrying/borrowing.", referenceMaterials: "Textbook; worksheets." },
+      { week: 4, topicTitle: "Basic Operations: Multiplication and Division", contentSummary: "Multiplication and division of numbers by 2-digit numbers.", referenceMaterials: "Multiplication chart; textbook." },
+      { week: 5, topicTitle: "Fractions", contentSummary: "Addition and subtraction of fractions with same and different denominators.", referenceMaterials: "Fraction charts/circles; cut-out paper strips; textbook." },
+      { week: 6, topicTitle: "Fractions: Multiplication and Division", contentSummary: "Multiplying and dividing simple and mixed fractions.", referenceMaterials: "Fraction charts; textbook." },
+      { week: 7, topicTitle: "Decimals", contentSummary: "Reading, writing, and performing basic operations with decimals up to 2 decimal places.", referenceMaterials: "Place value chart (decimal extension); textbook." },
+      { week: 8, topicTitle: "Mid-Term Test / Revision", contentSummary: "Revision of weeks 1-7 and mid-term assessment.", referenceMaterials: "Past questions; revision worksheets." },
+      { week: 9, topicTitle: "Money: Naira and Kobo", contentSummary: "Simple transactions, profit and loss involving Naira and Kobo.", referenceMaterials: "Naira notes/coins (real or cut-outs); market price list." },
+      { week: 10, topicTitle: "Ratio and Proportion", contentSummary: "Simple ratio and direct proportion problems using everyday Nigerian examples.", referenceMaterials: "Textbook; worksheets." },
+      { week: 11, topicTitle: "Introduction to Angles", contentSummary: "Identifying and measuring angles using a protractor.", referenceMaterials: "Protractor; ruler; angle charts." },
+      { week: 12, topicTitle: "Revision", contentSummary: "Comprehensive revision of first term topics ahead of examinations.", referenceMaterials: "Past questions; revision worksheets." },
+      { week: 13, topicTitle: "First Term Examination", contentSummary: "Formal assessment covering all first term topics.", referenceMaterials: "Examination question paper; answer sheets." },
+    ];
+
+    for (let i = 0; i < schemeEntries.length; i++) {
+      const entry = schemeEntries[i];
+      await prisma.schemeOfWorkEntry.upsert({
+        where: { schemeId_week: { schemeId: scheme.id, week: entry.week } },
+        update: {},
+        create: { schemeId: scheme.id, order: i, ...entry },
+      });
+    }
+    console.log(`   ✓ Scheme of work seeded with ${schemeEntries.length} weekly entries\n`);
+  } else {
+    console.warn("   ⚠ Skipping scheme of work — P5 Mathematics class-subject mapping not found\n");
+  }
 
   // ---------------------------------------------------------------------
   // 7. JAMB Mock Exam (30 questions, Use of English) for SS3

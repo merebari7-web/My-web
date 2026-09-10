@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, PlayCircle, Clock, ArrowLeft, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+const TERM_LABEL = ["", "First Term", "Second Term", "Third Term"];
+
 export default async function SubjectLessonsPage({
   params,
   searchParams,
@@ -32,7 +34,7 @@ export default async function SubjectLessonsPage({
     include: {
       lessons: {
         where: { status: "PUBLISHED" },
-        orderBy: { order: "asc" },
+        orderBy: [{ term: "asc" }, { week: "asc" }, { order: "asc" }],
         include: { progress: { where: { studentId: profile.id } }, topic: true },
       },
       exams: { where: { status: "PUBLISHED" } },
@@ -40,6 +42,15 @@ export default async function SubjectLessonsPage({
   });
 
   if (!classSubject) notFound();
+
+  // Group lessons by term, matching the standard Nigerian school calendar structure
+  const lessonsByTerm = new Map<number, typeof classSubject.lessons>();
+  for (const lesson of classSubject.lessons) {
+    const arr = lessonsByTerm.get(lesson.term) ?? [];
+    arr.push(lesson);
+    lessonsByTerm.set(lesson.term, arr);
+  }
+  const terms = Array.from(lessonsByTerm.keys()).sort((a, b) => a - b);
 
   return (
     <div className="space-y-6">
@@ -52,36 +63,46 @@ export default async function SubjectLessonsPage({
         <p className="text-muted-foreground text-sm mt-1">{subject.description}</p>
       </div>
 
-      <div className="space-y-3">
-        {classSubject.lessons.map((lesson, idx) => {
-          const completed = lesson.progress[0]?.completed;
-          return (
-            <Link key={lesson.id} href={`/lesson/${lesson.id}`}>
-              <Card className="hover:border-primary-300 transition-colors">
-                <CardContent className="py-4 flex items-center gap-4">
-                  <div
-                    className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
-                      completed
-                        ? "bg-success/15 text-success"
-                        : "bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300"
-                    }`}
-                  >
-                    {completed ? <CheckCircle2 className="h-5 w-5" /> : <PlayCircle className="h-5 w-5" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground">Lesson {idx + 1}{lesson.topic ? ` · ${lesson.topic.title}` : ""}</p>
-                    <p className="font-semibold text-sm truncate">{lesson.title}</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
-                    <Clock className="h-3.5 w-3.5" /> {lesson.durationMins}m
-                  </span>
-                  {completed && <Badge variant="success" className="shrink-0">Done</Badge>}
-                </CardContent>
-              </Card>
-            </Link>
-          );
-        })}
-      </div>
+      {terms.map((term) => (
+        <div key={term} className="space-y-3">
+          <h2 className="font-display font-bold text-lg flex items-center gap-2">
+            {TERM_LABEL[term] ?? `Term ${term}`}
+            <Badge variant="secondary">{lessonsByTerm.get(term)!.length} lessons</Badge>
+          </h2>
+          <div className="space-y-3">
+            {lessonsByTerm.get(term)!.map((lesson) => {
+              const completed = lesson.progress[0]?.completed;
+              return (
+                <Link key={lesson.id} href={`/lesson/${lesson.id}`}>
+                  <Card className="hover:border-primary-300 transition-colors">
+                    <CardContent className="py-4 flex items-center gap-4">
+                      <div
+                        className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
+                          completed
+                            ? "bg-success/15 text-success"
+                            : "bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300"
+                        }`}
+                      >
+                        {completed ? <CheckCircle2 className="h-5 w-5" /> : <PlayCircle className="h-5 w-5" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground">
+                          Week {lesson.week}{lesson.topic ? ` · ${lesson.topic.title}` : ""}
+                        </p>
+                        <p className="font-semibold text-sm truncate">{lesson.title}</p>
+                      </div>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                        <Clock className="h-3.5 w-3.5" /> {lesson.durationMins}m
+                      </span>
+                      {completed && <Badge variant="success" className="shrink-0">Done</Badge>}
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ))}
 
       {classSubject.exams.length > 0 && (
         <div>

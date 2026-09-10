@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import type { Role } from "@prisma/client";
 
 // Edge-compatible config (no Prisma adapter here) used by middleware.
 export const authConfig: NextAuthConfig = {
@@ -7,6 +8,17 @@ export const authConfig: NextAuthConfig = {
   },
   providers: [],
   callbacks: {
+    // The JWT itself already carries `role`/`id` (set by the full auth.ts jwt
+    // callback at sign-in). Middleware runs on the Edge runtime and can't hit
+    // Prisma, so we just surface the already-encoded token fields onto the
+    // session object here rather than re-deriving them.
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as { id?: string; role?: Role }).id = token.id as string;
+        (session.user as { id?: string; role?: Role }).role = token.role as Role;
+      }
+      return session;
+    },
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const protectedPrefixes = [

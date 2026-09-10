@@ -132,6 +132,7 @@ model User {
   announcements      Announcement[]     @relation("AnnouncementAuthor")
   contentApprovals   ContentApproval[]  @relation("ApprovedBy")
   auditLogs          AuditLog[]
+  schemesOfWork      SchemeOfWork[] @relation("SchemeAuthor")
 
   @@index([role])
   @@index([email])
@@ -290,6 +291,7 @@ model ClassSubject {
   topics Topic[]
   lessons Lesson[]
   exams   Exam[]
+  schemesOfWork SchemeOfWork[]
 
   @@unique([classLevelId, subjectId, stream])
 }
@@ -306,6 +308,7 @@ model Topic {
   necoTopic      String?      // NECO syllabus mapping
   jambRelevance  String?      @db.Text // JAMB/UTME relevance notes
   term           Int          @default(1) // 1, 2, 3
+  week           Int          @default(1) // week within the term (1-13), per Nigerian school calendar
 
   lessons   Lesson[]
   questions Question[]
@@ -332,7 +335,7 @@ model Lesson {
   title          String
   slug           String
   summary        String?       @db.Text
-  contentMd      String        @db.Text // Markdown lesson body
+  contentMd      String        @db.Text // Markdown lesson body (student-facing reading content)
   videoUrl       String?
   audioUrl       String?
   imageUrl       String?
@@ -340,6 +343,15 @@ model Lesson {
   order          Int           @default(0)
   status         ContentStatus @default(PUBLISHED)
   term           Int           @default(1)
+  week           Int           @default(1) // week within the term (1-13), per Nigerian school calendar
+
+  // --- Formal NERDC-style lesson note fields (teacher-facing, all optional) ---
+  learningObjectives String?   @db.Text // what students should be able to do by the end
+  entryBehaviour     String?   @db.Text // previous knowledge students should already have
+  instructionalMaterials String? @db.Text // teaching aids/resources needed
+  classActivities    String?   @db.Text // step-by-step teacher/student activities
+  evaluationQuestions String?  @db.Text // in-class evaluation questions (distinct from formal quiz)
+  assignment         String?   @db.Text // take-home assignment
 
   subjectId      String
   subject        Subject       @relation(fields: [subjectId], references: [id])
@@ -712,6 +724,42 @@ model ContentApproval {
   reviewedBy User?         @relation("ApprovedBy", fields: [reviewedById], references: [id])
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
+}
+
+// ==========================================================================
+// SCHEME OF WORK GENERATOR
+// ==========================================================================
+
+model SchemeOfWork {
+  id             String       @id @default(cuid())
+  classSubjectId String
+  classSubject   ClassSubject @relation(fields: [classSubjectId], references: [id], onDelete: Cascade)
+  term           Int
+  session        String // e.g. "2025/2026"
+  title          String
+
+  createdById String?
+  createdBy   User?   @relation("SchemeAuthor", fields: [createdById], references: [id])
+
+  entries SchemeOfWorkEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([classSubjectId, term, session])
+}
+
+model SchemeOfWorkEntry {
+  id                  String       @id @default(cuid())
+  schemeId            String
+  scheme              SchemeOfWork @relation(fields: [schemeId], references: [id], onDelete: Cascade)
+  week                Int
+  topicTitle          String
+  contentSummary      String?      @db.Text
+  referenceMaterials  String?      @db.Text
+  order               Int          @default(0)
+
+  @@unique([schemeId, week])
 }
 
 // ==========================================================================

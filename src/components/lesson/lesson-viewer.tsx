@@ -17,6 +17,9 @@ import {
   XCircle,
   Sparkles,
   BookOpen,
+  Download,
+  Loader2,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,6 +46,10 @@ interface LessonInfo {
   durationMins: number;
   subjectName: string;
   topicName?: string | null;
+  term?: number;
+  week?: number;
+  evaluationQuestions?: string | null;
+  assignment?: string | null;
 }
 
 interface SiblingLesson {
@@ -71,7 +78,43 @@ export function LessonViewer({
   const [quizSubmitted, setQuizSubmitted] = React.useState(false);
   const [completed, setCompleted] = React.useState(existingProgress?.completed ?? false);
   const [saving, setSaving] = React.useState(false);
+  const [exporting, setExporting] = React.useState(false);
   const utteranceRef = React.useRef<SpeechSynthesisUtterance | null>(null);
+  const printRef = React.useRef<HTMLDivElement>(null);
+
+  const handleDownloadPdf = async () => {
+    if (!printRef.current) return;
+    setExporting(true);
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+      const canvas = await html2canvas(printRef.current, { scale: 2, backgroundColor: "#ffffff" });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      pdf.save(`${lesson.title.replace(/[^\w\s-]/g, "")}.pdf`);
+      toast.success("Lesson downloaded as PDF!");
+    } catch {
+      toast.error("Couldn't generate PDF right now.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const plainText = React.useMemo(
     () => lesson.contentMd.replace(/[#*_`>\-]/g, "").replace(/\n+/g, ". "),
@@ -161,18 +204,47 @@ export function LessonViewer({
         {lesson.summary && <p className="text-muted-foreground mt-2">{lesson.summary}</p>}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <Button variant="outline" size="sm" onClick={toggleSpeech}>
           {speaking ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           {speaking ? "Stop reading" : "Listen to lesson"}
         </Button>
+        <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={exporting}>
+          {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          Download PDF
+        </Button>
       </div>
 
-      <Card>
-        <CardContent className="pt-6 prose prose-sm sm:prose-base dark:prose-invert max-w-none prose-headings:font-display prose-headings:font-bold prose-a:text-primary-600">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{lesson.contentMd}</ReactMarkdown>
-        </CardContent>
-      </Card>
+      <div ref={printRef} className="bg-background space-y-6">
+        <Card>
+          <CardContent className="pt-6 prose prose-sm sm:prose-base dark:prose-invert max-w-none prose-headings:font-display prose-headings:font-bold prose-a:text-primary-600">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{lesson.contentMd}</ReactMarkdown>
+          </CardContent>
+        </Card>
+
+        {(lesson.evaluationQuestions || lesson.assignment) && (
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              {lesson.evaluationQuestions && (
+                <div>
+                  <h3 className="font-display font-bold text-sm uppercase tracking-wide text-primary-700 dark:text-primary-400 flex items-center gap-1.5 mb-2">
+                    <ClipboardList className="h-4 w-4" /> Check Your Understanding
+                  </h3>
+                  <p className="text-sm whitespace-pre-line leading-relaxed">{lesson.evaluationQuestions}</p>
+                </div>
+              )}
+              {lesson.assignment && (
+                <div>
+                  <h3 className="font-display font-bold text-sm uppercase tracking-wide text-accent-600 dark:text-accent-400 flex items-center gap-1.5 mb-2">
+                    <Sparkles className="h-4 w-4" /> Assignment
+                  </h3>
+                  <p className="text-sm whitespace-pre-line leading-relaxed">{lesson.assignment}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {quizQuestions.length > 0 ? (
         <Card>

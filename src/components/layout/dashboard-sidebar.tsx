@@ -15,6 +15,9 @@ import {
   Users,
   ClipboardList,
   ShieldCheck,
+  NotebookPen,
+  CalendarRange,
+  CheckSquare,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -38,8 +41,11 @@ const navItems: NavItem[] = [
   { href: "/bookmarks", label: "Bookmarks", icon: Bookmark, roles: ["STUDENT"] },
   { href: "/downloads", label: "Offline Downloads", icon: Download, roles: ["STUDENT"] },
   { href: "/teacher", label: "Teacher Tools", icon: ClipboardList, roles: ["TEACHER"] },
+  { href: "/teacher/lessons", label: "Lesson Notes", icon: NotebookPen, roles: ["TEACHER"] },
+  { href: "/teacher/scheme-of-work", label: "Scheme of Work", icon: CalendarRange, roles: ["TEACHER"] },
   { href: "/parent", label: "My Children", icon: Users, roles: ["PARENT"] },
   { href: "/admin", label: "Admin CMS", icon: ShieldCheck, roles: ["ADMIN"] },
+  { href: "/admin/content", label: "Review Content", icon: CheckSquare, roles: ["ADMIN"] },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
