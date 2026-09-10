@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
+  <rect width="140" height="140" fill="none"/>
+  <g fill="none" stroke="#128A4A" stroke-width="1.5" opacity="0.10">
+    <circle cx="20" cy="20" r="10"/>
+    <circle cx="20" cy="20" r="4"/>
+    <circle cx="70" cy="20" r="10"/>
+    <circle cx="70" cy="20" r="4"/>
+    <circle cx="120" cy="20" r="10"/>
+    <circle cx="120" cy="20" r="4"/>
+    <circle cx="45" cy="55" r="10"/>
+    <circle cx="45" cy="55" r="4"/>
+    <circle cx="95" cy="55" r="10"/>
+    <circle cx="95" cy="55" r="4"/>
+    <circle cx="20" cy="90" r="10"/>
+    <circle cx="20" cy="90" r="4"/>
+    <circle cx="70" cy="90" r="10"/>
+    <circle cx="70" cy="90" r="4"/>
+    <circle cx="120" cy="90" r="10"/>
+    <circle cx="120" cy="90" r="4"/>
+    <circle cx="45" cy="125" r="10"/>
+    <circle cx="45" cy="125" r="4"/>
+    <circle cx="95" cy="125" r="10"/>
+    <circle cx="95" cy="125" r="4"/>
+    <path d="M0,35 Q35,55 70,35 T140,35" />
+    <path d="M0,105 Q35,125 70,105 T140,105" />
+  </g>
+</svg>
