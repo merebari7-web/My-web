@@ -47,7 +47,15 @@ next-env.d.ts
 .agents/
 .claude/
 .windsurf/
+agent/
 AGENTS.md
 CLAUDE.md
 skills-lock.json
 tsconfig.tsbuildinfo
+
+# PWA generated files (regenerated at build time by next-pwa)
+/public/sw.js
+/public/workbox-*.js
+/public/worker-*.js
+/public/sw.js.map
+/public/workbox-*.js.map
